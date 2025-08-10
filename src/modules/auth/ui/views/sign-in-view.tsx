@@ -16,7 +16,6 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { OctagonAlertIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 const formSchema = z.object({
@@ -24,8 +23,6 @@ const formSchema = z.object({
   password: z.string().min(1, { message: "Password is required" }),
 });
 export const SignInView = () => {
-  const router = useRouter();
-
   const [error, setError] = useState<null | string>(null);
   const [pending, setPending] = useState<boolean>(false);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -43,12 +40,33 @@ export const SignInView = () => {
       {
         email: data.email,
         password: data.password,
+        callbackURL: "/",
       },
       {
         onSuccess: () => {
-          router.push("/");
+          setPending(false);
         },
         onError: ({ error }) => {
+          setPending(false);
+          setError(error?.message);
+        },
+      }
+    );
+    setPending(false);
+  };
+
+  const onSocial = (provider: "github" | "google") => {
+    setError(null);
+    setPending(true);
+
+    authClient.signIn.social(
+      { provider, callbackURL: "/" },
+      {
+        onSuccess: () => {
+          setPending(false);
+        },
+        onError: ({ error }) => {
+          setPending(false);
           setError(error?.message);
         },
       }
@@ -131,6 +149,7 @@ export const SignInView = () => {
                     disabled={pending}
                     type="button"
                     className="w-full"
+                    onClick={() => onSocial("google")}
                   >
                     Google
                   </Button>
@@ -139,6 +158,7 @@ export const SignInView = () => {
                     disabled={pending}
                     type="button"
                     className="w-full"
+                    onClick={() => onSocial("github")}
                   >
                     Github
                   </Button>
